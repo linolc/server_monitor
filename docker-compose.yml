@@ -1,17 +1,21 @@
-version: '3.8'
-
 services:
   node-exporter:
     image: prom/node-exporter
+    user: root
     restart: unless-stopped
-    ports:
-      - "9100:9100"
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.rapl'
 
   prometheus:
     image: prom/prometheus
     restart: unless-stopped
-    ports:
-      - "9090:9090"
+    network_mode: host
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
@@ -19,10 +23,19 @@ services:
   grafana:
     image: grafana/grafana
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    network_mode: host
     volumes:
       - grafana-data:/var/lib/grafana
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
 
 volumes:
   prometheus-data:
